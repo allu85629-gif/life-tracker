@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Tracker Pro | Ultimate Wellness Dashboard</title>
+    <!-- External Libraries -->
+    <script src="https://cloudflare.com"></script>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6; --water: #0ea5e9; --calorie: #ef4444; 
+            --sleep: #6366f1; --bmi: #10b981; --share: #8b5cf6;
+            --bg: #f1f5f9; --text: #1e293b;
+        }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--text); overflow-x: hidden; }
+        .app-card { max-width: 550px; margin: 0 auto; background: white; border-radius: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); padding: 25px; }
+        
+        /* Input Section */
+        .input-section { margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 2px solid #e2e8f0; box-sizing: border-box; outline: none; transition: 0.3s; font-family: inherit; }
+        input:focus { border-color: var(--primary); }
+
+        /* Dual Age Dashboard */
+        .dashboard-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        
+        /* Type 1: Static Summary Card */
+        .summary-card { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2); }
+        
+        /* Type 2: Live Digital Ticking Card */
+        .live-ticking-card { background: #1e293b; color: #38bdf8; padding: 20px; border-radius: 20px; text-align: center; font-family: 'Courier New', monospace; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+        .live-ticking-card b { color: #f8fafc; font-size: 1.3rem; letter-spacing: 1px; }
+
+        /* Action Grid */
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .btn-track { padding: 15px; border: none; border-radius: 18px; color: white; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .btn-track:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+
+        .btn-bmi { background: var(--bmi); }
+        .btn-water { background: var(--water); }
+        .btn-calorie { background: var(--calorie); }
+        .btn-sleep { background: var(--sleep); }
+        .btn-share { background: var(--share); grid-column: span 2; font-size: 1rem; }
+
+        /* Panels */
+        .panel { display: none; background: #f8fafc; padding: 20px; border-radius: 20px; margin-top: 15px; border: 1px solid #cbd5e1; animation: fadeIn 0.4s ease; }
+        .progress-bar { width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; transition: 0.8s ease-out; background: var(--water); }
+        .save-btn { width: 100%; padding: 12px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        /* Shareable Card */
+        #share-card {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white; padding: 35px; border-radius: 25px; text-align: center; margin-top: 20px;
+            display: none; box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4);
+        }
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .stat-item { background: rgba(255,255,255,0.15); padding: 12px; border-radius: 15px; font-size: 0.75rem; }
+
+        .reset-zone { margin-top: 30px; padding-top: 20px; border-top: 1px dashed #e2e8f0; text-align: center; }
+        .btn-reset { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.8rem; font-weight: 600; text-decoration: underline; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .shake { animation: shakeAnim 0.5s; border: 2px solid var(--calorie) !important; }
+        @keyframes shakeAnim { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <h2 style="text-align: center; margin-top: 0; letter-spacing: -1px; color: var(--primary);">Life Tracker Pro</h2>
+    
+    <div class="input-section">
+        <input type="text" id="u-name" placeholder="Enter Full Name" oninput="saveName()">
+        <label style="font-size: 0.75rem; font-weight: bold; color: #64748b;">DATE & TIME OF BIRTH</label>
+        <input type="datetime-local" id="dob" oninput="initApp()">
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <!-- Dual Age View Section -->
+        <div class="dashboard-container">
+            <!-- Type 1: Summary -->
+            <div class="summary-card">
+                <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">You are currently</div>
+                <div id="age-summary" style="font-size: 1.5rem; font-weight: 800; margin: 5px 0;"></div>
+                <div id="bday-countdown" style="font-size: 0.85rem; font-weight: 600; background: rgba(0,0,0,0.1); display: inline-block; padding: 5px 15px; border-radius: 20px; margin-top: 5px;"></div>
+            </div>
+
+            <!-- Type 2: Live Digital Counter -->
+            <div class="live-ticking-card">
+                <div style="font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px; letter-spacing: 1px;">Live Journey Counter</div>
+                <div id="live-counter"></div>
+            </div>
+        </div>
+
+        <div class="action-grid">
+            <button class="btn-track btn-bmi" id="bmi-btn-main" onclick="togglePanel('bmi-panel')">⚖️ BMI Check</button>
+            <button class="btn-track btn-water" onclick="togglePanel('water-panel')">💧 Water Tracker</button>
+            <button class="btn-track btn-calorie" onclick="checkBeforeCalorie()">🔥 Calories</button>
+            <button class="btn-track btn-sleep" onclick="togglePanel('sleep-panel')">😴 Sleep Plan</button>
+            <button class="btn-track btn-share" onclick="prepareShareCard()">📸 Create Life Card</button>
+        </div>
+
+        <!-- BMI Panel -->
+        <div id="bmi-panel" class="panel">
+            <h4 style="margin:0; color:var(--bmi);">BMI Calculator</h4>
+            <input type="number" id="w-val" placeholder="Weight (kg)">
+            <input type="number" id="h-val" placeholder="Height (cm)">
+            <button onclick="calcBMI()" class="save-btn" style="background:var(--bmi);">Calculate BMI</button>
+            <div id="bmi-res" style="margin-top:15px; text-align:center;"></div>
+        </div>
+
+        <!-- Water Panel -->
+        <div id="water-panel" class="panel">
+            <h4 style="margin:0; color:var(--water);">Water Intake</h4>
+            <div class="progress-bar"><div id="water-fill" class="progress-fill"></div></div>
+            <p id="water-text" style="font-weight:bold; margin: 5px 0;">0 / 3000 ml</p>
+            <button onclick="addWater(250)" class="save-btn" style="background:var(--water);">+ Add 1 Glass (250ml)</button>
+            <button onclick="resetWater()" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:0.7rem; width:100%; margin-top:10px;">Reset Today</button>
+        </div>
+
+        <!-- Calorie Panel -->
+        <div id="calorie-panel" class="panel">
+            <h4 style="margin:0; color:var(--calorie);">Daily Calorie Needs</h4>
+            <div id="cal-info" style="font-size: 0.95rem; margin-top: 10px; line-height: 1.6;"></div>
+        </div>
+
+        <!-- Sleep Panel -->
+        <div id="sleep-panel" class="panel">
+            <h4 style="margin:0; color:var(--sleep);">Sleep Cycles</h4>
+            <label style="font-size: 0.8rem;">Wake up time:</label>
+            <input type="time" id="wake-time" value="07:00">
+            <button onclick="calcSleep()" class="save-btn" style="background:var(--sleep);">Find Bedtimes</button>
+            <div id="sleep-res" style="margin-top:15px; font-size:0.85rem; line-height:1.6;"></div>
+        </div>
+
+        <!-- Share Card Area -->
+        <div id="share-card">
+            <small id="card-name-label" style="text-transform:uppercase; letter-spacing:1px; opacity:0.8;"></small>
+            <div id="card-age" style="font-size: 2.2rem; font-weight: 800; margin: 10px 0;"></div>
+            <div class="card-stats">
+                <div class="stat-item"><b id="c-heart">-</b><br>Heartbeats</div>
+                <div class="stat-item"><b id="c-breath">-</b><br>Breaths</div>
+                <div class="stat-item"><b id="c-water">-</b><br>Water (L)</div>
+                <div class="stat-item"><b id="c-days">-</b><br>Days Lived</div>
+            </div>
+            <p style="font-size: 0.6rem; margin-top: 20px; opacity: 0.7;">Created via Life Tracker Pro</p>
+        </div>
+
+        <div id="share-controls" class="hidden">
+            <button onclick="downloadCard()" class="save-btn" style="background:#10b981;">📥 Download Image</button>
+            <button onclick="waShare()" class="save-btn" style="background:#25D366;">🟢 Share on WhatsApp</button>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="reset-zone">
+            <button class="btn-reset" onclick="confirmReset()">⚠️ Reset & Clear All My Data</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let tracker;
+    let waterIn = parseInt(localStorage.getItem('waterIn')) || 0;
+
+    window.onload = () => {
+        const sDob = localStorage.getItem('uDob');
+        const sName = localStorage.getItem('uName');
+        const sProfile = JSON.parse(localStorage.getItem('uProfile'));
+
+        if(sName) document.getElementById('u-name').value = sName;
+        if(sDob) { document.getElementById('dob').value = sDob; initApp(); }
+        if(sProfile) {
+            document.getElementById('w-val').value = sProfile.w;
+            document.getElementById('h-val').value = sProfile.h;
+            calcBMI();
+        }
+        updateWaterUI();
+    };
+
+    function saveName() { localStorage.setItem('uName', document.getElementById('u-name').value); }
+
+    function initApp() {
+        const dob = document.getElementById('dob').value;
+        if(!dob) return;
+        localStorage.setItem('uDob', dob);
+        document.getElementById('dashboard').classList.remove('hidden');
+        clearInterval(tracker);
+        update();
+        tracker = setInterval(update, 1000);
+    }
+
+    function update() {
+        const dob = new Date(document.getElementById('dob').value);
+        const now = new Date();
+        
+        // Age Logic
+        let y = now.getFullYear() - dob.getFullYear();
+        let m = now.getMonth() - dob.getMonth();
+        let d = now.getDate() - dob.getDate();
+        let h = now.getHours() - dob.getHours();
+        let mi = now.getMinutes() - dob.getMinutes();
+        let s = now.getSeconds() - dob.getSeconds();
+
+        if(s < 0) { s += 60; mi--; }
+        if(mi < 0) { mi += 60; h--; }
+        if(h < 0) { h += 24; d--; }
+        if(d < 0) { m--; d += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+        if(m < 0) { y--; m += 12; }
+
+        // Type 1 Display
+        document.getElementById('age-summary').innerText = `${y}Y, ${m}M, ${d}D`;
+        
+        // Type 2 Display (Live)
+        document.getElementById('live-counter').innerHTML = `
+            <b>${y}</b>y : <b>${m}</b>m : <b>${d}</b>d : <b>${h}</b>h : <b>${mi}</b>m : <b style="color:#38bdf8;">${s}</b>s
+        `;
+
+        // Bday Countdown
+        let next = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
+        if(now > next) next.setFullYear(now.getFullYear() + 1);
+        document.getElementById('bday-countdown').innerText = `🎂 Next Birthday in ${Math.ceil((next - now) / 86400000)} days`;
+
+        // Auto-Reset Water Daily
+        const today = new Date().toDateString();
+        if(localStorage.getItem('lastDate') !== today) {
+            waterIn = 0; localStorage.setItem('waterIn', 0);
+            localStorage.setItem('lastDate', today);
+            updateWaterUI();
+        }
+    }
+
+    function togglePanel(id) {
+        const target = document.getElementById(id);
+        const isVisible = target.style.display === 'block';
+        document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+        target.style.display = isVisible ? 'none' : 'block';
+    }
+
+    function checkBeforeCalorie() {
+        const w = document.getElementById('w-val').value;
+        const h = document.getElementById('h-val').value;
+        if(!w || !h) {
+            alert("⚠️ Please fill Weight and Height in the BMI section first!");
+            togglePanel('bmi-panel');
+            const bBtn = document.getElementById('bmi-btn-main');
+            bBtn.classList.add('shake');
+            setTimeout(() => bBtn.classList.remove('shake'), 1000);
+        } else {
+            togglePanel('calorie-panel');
+        }
+    }
+
+    function calcBMI() {
+        const w = document.getElementById('w-val').value, h = document.getElementById('h-val').value;
+        if(!w || !h) return;
+        const bmi = (w / ((h/100) * (h/100))).toFixed(1);
+        let status = bmi < 18.5 ? "Underweight" : bmi < 25 ? "Normal" : "Overweight";
+        document.getElementById('bmi-res').innerHTML = `Your BMI: <b>${bmi}</b> (${status})`;
+        
+        const bmr = (10 * w) + (6.25 * h) - (5 * 25) + 5; 
+        document.getElementById('cal-info').innerHTML = `🔹 Maintenance: <b>${Math.round(bmr*1.2)}</b> kcal/day<br>🔹 Weight Loss: <b>${Math.round(bmr*1.2)-500}</b> kcal/day`;
+        localStorage.setItem('uProfile', JSON.stringify({w, h}));
+    }
+
+    function addWater(ml) { waterIn += ml; localStorage.setItem('waterIn', waterIn); updateWaterUI(); }
+    function resetWater() { waterIn = 0; localStorage.setItem('waterIn', 0); updateWaterUI(); }
+    function updateWaterUI() {
+        document.getElementById('water-fill').style.width = Math.min((waterIn/3000)*100, 100) + "%";
+        document.getElementById('water-text').innerText = `${waterIn} / 3000 ml`;
+    }
+
+    function calcSleep() {
+        const t = document.getElementById('wake-time').value;
+        const [hr, min] = t.split(':').map(Number);
+        let d = new Date(); d.setHours(hr, min, 0);
+        let s1 = new Date(d.getTime() - (9 * 60 * 60000)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        let s2 = new Date(d.getTime() - (7.5 * 60 * 60000)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('sleep-res').innerHTML = `Best bedtimes to wake up refreshed:<br><b>${s1}</b> or <b>${s2}</b>`;
+    }
+
+    function prepareShareCard() {
+        const dob = new Date(document.getElementById('dob').value);
+        const hrs = (new Date() - dob) / 3600000;
+        document.getElementById('card-name-label').innerText = (document.getElementById('u-name').value || "Guest") + "'s Life Journey";
+        document.getElementById('card-age').innerText = document.getElementById('age-summary').innerText;
+        document.getElementById('c-heart').innerText = Math.floor(hrs * 60 * 72).toLocaleString();
+        document.getElementById('c-breath').innerText = Math.floor(hrs * 60 * 16).toLocaleString();
+        document.getElementById('c-water').innerText = (waterIn/1000).toFixed(1);
+        document.getElementById('c-days').innerText = Math.floor(hrs/24).toLocaleString();
+        
+        document.getElementById('share-card').style.display = 'block';
+        document.getElementById('share-controls').classList.remove('hidden');
+    }
+
+    function downloadCard() {
+        html2canvas(document.getElementById('share-card'), {scale: 2, borderRadius: 25}).then(canvas => {
+            const a = document.createElement('a'); a.download = 'MyLifeCard.png'; a.href = canvas.toDataURL(); a.click();
+        });
+    }
+
+    function waShare() {
+        const msg = `Check out my Life Journey! I am ${document.getElementById('age-summary').innerText} old. Calculate yours here!`;
+        window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function confirmReset() {
+        if(confirm("Are you sure? This will delete all your personal data and health history permanently.")) {
+            localStorage.clear();
+            window.location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
