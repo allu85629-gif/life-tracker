@@ -1,136 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Life Tracker Pro | Wellness Dashboard</title>
+    <title>Life Tracker Pro | Health Dashboard</title>
     <script src="https://cloudflare.com"></script>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        :root { --primary: #3b82f6; --water: #0ea5e9; --calorie: #ef4444; --sleep: #6366f1; --bmi: #10b981; --share: #8b5cf6; --bg: #f1f5f9; --text: #1e293b; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--text); }
-        .app-card { max-width: 550px; margin: 0 auto; background: white; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 25px; }
-        .input-section { margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 2px solid #e2e8f0; box-sizing: border-box; outline: none; transition: 0.3s; }
+        :root { --primary: #3b82f6; --water: #0ea5e9; --calorie: #ef4444; --sleep: #6366f1; --bmi: #10b981; --share: #8b5cf6; --bg: #f1f5f9; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .app-card { max-width: 550px; margin: 0 auto; background: white; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); padding: 25px; }
+        .input-section { margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
+        
         .dashboard-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
-        .summary-card { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 25px; border-radius: 20px; text-align: center; }
-        .live-ticking-card { background: #1e293b; color: #38bdf8; padding: 20px; border-radius: 20px; text-align: center; font-family: 'Courier New', monospace; }
-        .live-ticking-card b { color: #f8fafc; font-size: 1.2rem; }
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .btn-track { padding: 15px; border: none; border-radius: 18px; color: white; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.85rem; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        .btn-bmi { background: var(--bmi); } .btn-water { background: var(--water); } .btn-calorie { background: var(--calorie); } .btn-sleep { background: var(--sleep); } .btn-share { background: var(--share); grid-column: span 2; font-size: 1rem; }
-        .panel { display: none; background: #f8fafc; padding: 20px; border-radius: 20px; margin-top: 15px; border: 1px solid #cbd5e1; animation: fadeIn 0.4s ease; }
-        .progress-bar { width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
-        .progress-fill { height: 100%; width: 0%; transition: 0.8s ease-out; background: var(--water); }
-        .save-btn { width: 100%; padding: 12px; border: none; border-radius: 12px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #share-card { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 35px; border-radius: 25px; text-align: center; margin-top: 20px; display: none; }
-        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .stat-item { background: rgba(255,255,255,0.15); padding: 12px; border-radius: 15px; font-size: 0.75rem; }
+        .summary-card { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 20px; border-radius: 20px; text-align: center; }
+        .live-ticking-card { background: #1e293b; color: #38bdf8; padding: 15px; border-radius: 20px; text-align: center; font-family: monospace; }
+        
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-track { padding: 15px; border: none; border-radius: 15px; color: white; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
+        .panel { display: none; background: #f8fafc; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px solid #ddd; }
+        .save-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; color: white; font-weight: bold; margin-top: 10px; cursor: pointer; }
+
+        #share-card { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 25px; border-radius: 20px; text-align: center; display: none; margin-top: 20px; }
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; font-size: 0.8rem; }
         .hidden { display: none; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div class="app-card">
-    <h2 style="text-align: center; margin-top: 0; color: var(--primary);">Life Tracker Pro</h2>
+    <h2 style="text-align: center; color: var(--primary);">Life Tracker Pro</h2>
     <div class="input-section">
-        <input type="text" id="u-name" placeholder="Full Name" oninput="saveName()">
-        <label style="font-size: 0.75rem; font-weight: bold; color: #64748b;">DATE & TIME OF BIRTH</label>
-        <input type="datetime-local" id="dob" oninput="initApp()">
+        <input type="text" id="u-name" placeholder="Full Name" oninput="localStorage.setItem('uName', this.value)">
+        <label style="font-size: 0.8rem; font-weight: bold; color: #666;">BIRTH DATE & TIME</label>
+        <input type="datetime-local" id="dob" onchange="initApp()">
     </div>
 
     <div id="dashboard" class="hidden">
         <div class="dashboard-container">
             <div class="summary-card">
-                <div id="age-summary" style="font-size: 1.5rem; font-weight: 800; margin: 5px 0;"></div>
-                <div id="bday-countdown" style="font-size: 0.85rem; font-weight: 600;"></div>
+                <div id="age-summary" style="font-size: 1.4rem; font-weight: 800;"></div>
+                <div id="bday-countdown" style="font-size: 0.8rem; margin-top: 5px;"></div>
             </div>
             <div class="live-ticking-card"><div id="live-counter"></div></div>
         </div>
 
         <div class="action-grid">
-            <button class="btn-track btn-bmi" onclick="togglePanel('bmi-panel')">⚖️ BMI</button>
-            <button class="btn-track btn-water" onclick="togglePanel('water-panel')">💧 Water</button>
-            <button class="btn-track btn-calorie" onclick="handleCalorieClick()">🔥 Calories</button>
-            <button class="btn-track btn-sleep" onclick="togglePanel('sleep-panel')">😴 Sleep</button>
-            <button class="btn-track btn-share" onclick="prepareShareCard()">📸 Create Life Card</button>
+            <button class="btn-track" style="background:var(--bmi)" onclick="togglePanel('bmi-panel')">⚖️ BMI</button>
+            <button class="btn-track" style="background:var(--water)" onclick="togglePanel('water-panel')">💧 Water</button>
+            <button class="btn-track" style="background:var(--calorie)" onclick="handleCalorieClick()">🔥 Calories</button>
+            <button class="btn-track" style="background:var(--sleep)" onclick="togglePanel('sleep-panel')">😴 Sleep</button>
+            <button class="btn-track" style="background:var(--share); grid-column: span 2;" onclick="prepareShareCard()">📸 Create Life Card</button>
         </div>
 
+        <!-- Panels -->
         <div id="bmi-panel" class="panel">
             <input type="number" id="w-val" placeholder="Weight (kg)">
             <input type="number" id="h-val" placeholder="Height (cm)">
-            <button onclick="calcBMI()" class="save-btn" style="background:var(--bmi);">Calculate</button>
-            <div id="bmi-res" style="margin-top:10px; text-align:center;"></div>
+            <button onclick="calcBMI()" class="save-btn" style="background:var(--bmi)">Calculate</button>
+            <div id="bmi-res" style="text-align:center; margin-top:10px;"></div>
         </div>
 
         <div id="water-panel" class="panel">
-            <div class="progress-bar"><div id="water-fill" class="progress-fill"></div></div>
-            <p id="water-text" style="font-weight:bold;">0 / 3000 ml</p>
-            <button onclick="addWater(250)" class="save-btn" style="background:var(--water);">Add Glass</button>
+            <p id="water-text" style="font-weight:bold; text-align:center;">0 / 3000 ml</p>
+            <button onclick="addWater(250)" class="save-btn" style="background:var(--water)">+ Add Glass</button>
         </div>
 
         <div id="calorie-panel" class="panel"><div id="cal-info"></div></div>
 
         <div id="sleep-panel" class="panel">
             <input type="time" id="wake-time" value="07:00">
-            <button onclick="calcSleep()" class="save-btn" style="background:var(--sleep);">Find Bedtimes</button>
+            <button onclick="calcSleep()" class="save-btn" style="background:var(--sleep)">Plan Sleep</button>
             <div id="sleep-res" style="margin-top:10px;"></div>
         </div>
 
         <div id="share-card">
-            <div id="card-name-label" style="text-transform:uppercase; letter-spacing:1px; opacity:0.8;"></div>
-            <div id="card-age" style="font-size: 2.2rem; font-weight: 800; margin: 10px 0;"></div>
+            <div id="card-age" style="font-size: 1.8rem; font-weight: 800;"></div>
             <div class="card-stats">
-                <div class="stat-item"><b id="c-heart">-</b><br>Heartbeats</div>
-                <div class="stat-item"><b id="c-breath">-</b><br>Breaths</div>
-                <div class="stat-item"><b id="c-water">-</b><br>Water (L)</div>
-                <div class="stat-item"><b id="c-days">-</b><br>Days Lived</div>
+                <div id="c-heart"></div>
+                <div id="c-breath"></div>
             </div>
         </div>
-
         <div id="share-controls" class="hidden">
-            <button onclick="downloadCard()" class="save-btn" style="background:#10b981;">📥 Download Image</button>
-            <button onclick="waShare()" class="save-btn" style="background:#25D366;">🟢 WhatsApp Share</button>
+            <button onclick="downloadCard()" class="save-btn" style="background:#10b981">Download Image</button>
         </div>
 
-        <div style="text-align:center; margin-top:30px;">
-            <button onclick="confirmReset()" style="color:#ef4444; background:none; border:none; text-decoration:underline; font-size:0.8rem; cursor:pointer;">Reset All Data</button>
-        </div>
+        <button onclick="confirmReset()" style="width:100%; background:none; border:none; color:red; cursor:pointer; margin-top:20px; text-decoration:underline;">Reset All Data</button>
     </div>
 </div>
 
 <script>
-    let tracker;
+    let timer;
     let waterIn = parseInt(localStorage.getItem('waterIn')) || 0;
 
-    window.onload = () => {
-        const sDob = localStorage.getItem('uDob');
-        const sName = localStorage.getItem('uName');
-        if(sName) document.getElementById('u-name').value = sName;
-        if(sDob) { document.getElementById('dob').value = sDob; initApp(); }
-        updateWaterUI();
+    window.onload = function() {
+        const savedDob = localStorage.getItem('uDob');
+        const savedName = localStorage.getItem('uName');
+        if(savedName) document.getElementById('u-name').value = savedName;
+        if(savedDob) {
+            document.getElementById('dob').value = savedDob;
+            initApp();
+        }
     };
 
     function initApp() {
-        const dob = document.getElementById('dob').value;
-        if(!dob) return;
-        localStorage.setItem('uDob', dob);
+        const dobVal = document.getElementById('dob').value;
+        if(!dobVal) return;
+        
+        localStorage.setItem('uDob', dobVal);
         document.getElementById('dashboard').classList.remove('hidden');
-        clearInterval(tracker);
+        
+        if(timer) clearInterval(timer);
         update();
-        tracker = setInterval(update, 1000);
+        timer = setInterval(update, 1000);
     }
 
     function update() {
         const dob = new Date(document.getElementById('dob').value);
         const now = new Date();
+        
+        if(isNaN(dob)) return;
+
         let y = now.getFullYear() - dob.getFullYear();
         let m = now.getMonth() - dob.getMonth();
         let d = now.getDate() - dob.getDate();
         let h = now.getHours() - dob.getHours();
         let mi = now.getMinutes() - dob.getMinutes();
         let s = now.getSeconds() - dob.getSeconds();
+
         if(s < 0) { s += 60; mi--; }
         if(mi < 0) { mi += 60; h--; }
         if(h < 0) { h += 24; d--; }
@@ -138,78 +136,72 @@
         if(m < 0) { y--; m += 12; }
 
         document.getElementById('age-summary').innerText = `${y}Y, ${m}M, ${d}D`;
-        document.getElementById('live-counter').innerHTML = `<b>${y}</b>y : <b>${m}</b>m : <b>${d}</b>d : <b>${h}</b>h : <b>${mi}</b>m : <b style="color:#38bdf8;">${s}</b>s`;
+        document.getElementById('live-counter').innerText = `${y}y : ${m}m : ${d}d : ${h}h : ${mi}m : ${s}s`;
 
         let next = new Date(now.getFullYear(), dob.getMonth(), dob.getDate());
         if(now > next) next.setFullYear(now.getFullYear() + 1);
-        document.getElementById('bday-countdown').innerText = `🎂 Next Birthday: ${Math.ceil((next-now)/86400000)} days`;
+        document.getElementById('bday-countdown').innerText = `Next Birthday: ${Math.ceil((next-now)/86400000)} days left`;
     }
 
     function togglePanel(id) {
-        const target = document.getElementById(id);
-        const isVisible = target.style.display === 'block';
-        document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-        target.style.display = isVisible ? 'none' : 'block';
+        const p = document.getElementById(id);
+        const isVisible = p.style.display === 'block';
+        document.querySelectorAll('.panel').forEach(el => el.style.display = 'none');
+        p.style.display = isVisible ? 'none' : 'block';
     }
 
     function handleCalorieClick() {
-        if(!document.getElementById('w-val').value) { alert("Fill BMI first!"); togglePanel('bmi-panel'); }
-        else togglePanel('calorie-panel');
+        if(!document.getElementById('w-val').value) {
+            alert("Fill BMI first!");
+            togglePanel('bmi-panel');
+        } else {
+            togglePanel('calorie-panel');
+            calcBMI();
+        }
     }
 
     function calcBMI() {
-        const w = document.getElementById('w-val').value, h = document.getElementById('h-val').value;
+        const w = document.getElementById('w-val').value;
+        const h = document.getElementById('h-val').value;
         if(!w || !h) return;
-        const bmi = (w / ((h/100) * (h/100))).toFixed(1);
+        const bmi = (w / ((h/100)*(h/100))).toFixed(1);
         document.getElementById('bmi-res').innerHTML = `BMI: <b>${bmi}</b>`;
-        document.getElementById('cal-info').innerHTML = `Goal: <b>${Math.round(bmi*150)}</b> kcal/day`;
+        document.getElementById('cal-info').innerHTML = `Goal: <b>${Math.round(bmi * 140)}</b> kcal/day`;
     }
 
-    function addWater(ml) { waterIn += ml; localStorage.setItem('waterIn', waterIn); updateWaterUI(); }
-    function updateWaterUI() {
-        document.getElementById('water-fill').style.width = Math.min((waterIn/3000)*100, 100) + "%";
+    function addWater(ml) {
+        waterIn += ml;
+        localStorage.setItem('waterIn', waterIn);
         document.getElementById('water-text').innerText = `${waterIn} / 3000 ml`;
     }
 
     function calcSleep() {
         const t = document.getElementById('wake-time').value;
-        const [hr, min] = t.split(':').map(Number);
-        let d = new Date(); d.setHours(hr, min, 0);
-        let s1 = new Date(d.getTime() - (9 * 60 * 60000)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        let s2 = new Date(d.getTime() - (7.5 * 60 * 60000)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        document.getElementById('sleep-res').innerHTML = `Sleep at: <b>${s1}</b> or <b>${s2}</b>`;
+        document.getElementById('sleep-res').innerText = "Try to sleep 7.5 or 9 hours before " + t;
     }
 
     function prepareShareCard() {
-        const dob = new Date(document.getElementById('dob').value);
-        const hrs = (new Date() - dob) / 3600000;
-        document.getElementById('card-name-label').innerText = (document.getElementById('u-name').value || "Guest") + "'s Life Card";
         document.getElementById('card-age').innerText = document.getElementById('age-summary').innerText;
-        document.getElementById('c-heart').innerText = Math.floor(hrs * 60 * 72).toLocaleString();
-        document.getElementById('c-breath').innerText = Math.floor(hrs * 60 * 16).toLocaleString();
-        document.getElementById('c-water').innerText = (waterIn/1000).toFixed(1);
-        document.getElementById('c-days').innerText = Math.floor(hrs/24).toLocaleString();
         document.getElementById('share-card').style.display = 'block';
         document.getElementById('share-controls').classList.remove('hidden');
     }
 
     function downloadCard() {
-        const card = document.getElementById('share-card');
-        html2canvas(card, { scale: 2, useCORS: true }).then(canvas => {
-            const link = document.createElement('a');
-            link.href = canvas.toDataURL("image/png");
-            link.download = 'MyLifeCard.png';
-            link.click();
+        html2canvas(document.getElementById('share-card')).then(canvas => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL();
+            a.download = 'LifeCard.png';
+            a.click();
         });
     }
 
-    function waShare() {
-        const msg = `Check my Life Journey! I am ${document.getElementById('age-summary').innerText} old. Link: ${window.location.href}`;
-        window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
+    function confirmReset() {
+        if(confirm("Clear all data?")) {
+            localStorage.clear();
+            location.reload();
+        }
     }
-
-    function saveName() { localStorage.setItem('uName', document.getElementById('u-name').value); }
-    function confirmReset() { if(confirm("Reset all data?")) { localStorage.clear(); location.reload(); } }
 </script>
+
 </body>
 </html>
