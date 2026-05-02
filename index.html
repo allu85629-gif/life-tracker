@@ -301,15 +301,49 @@
         });
     }
 
-    function waShare() {
-        const msg = `Check out my Life Journey! I am ${document.getElementById('age-summary').innerText} old. Calculate yours here!`;
-        window.open(`https://wa.me{encodeURIComponent(msg)}`, '_blank');
-    }
+    function downloadCard() {
+    const card = document.getElementById('share-card');
+    
+    // Smooth rendering ke liye options
+    const options = {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null
+    };
 
-    function confirmReset() {
-        if(confirm("Are you sure? This will delete all your personal data and health history permanently.")) {
-            localStorage.clear();
-            window.location.reload();
+    html2canvas(card, options).then(canvas => {
+        try {
+            const imgData = canvas.toDataURL("image/png");
+            
+            // Mobile ke liye direct download link
+            const link = document.createElement('a');
+            link.href = imgData;
+            link.download = 'MyLifeCard.png';
+            
+            // Ye method mobile chrome mein better kaam karta hai
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert("✅ Image Download Shuru Ho Gayi Hai! Agar nahi hui toh image par long-press karke save karein.");
+        } catch (e) {
+            console.error("Download Error:", e);
+            alert("Error: Browser download block kar raha hai. Ek baar desktop mode try karein.");
+        }
+    });
+}
+
+function waShare() {
+    const name = document.getElementById('u-name').value || "Friend";
+    const age = document.getElementById('age-summary').innerText;
+    
+    // WhatsApp par sirf text aur link jayega
+    const text = `✨ *Life Tracker Pro Report* ✨%0A%0AHello! Main *${name}* hoon aur meri age *${age}* hai!%0A%0A💓 Heartbeats: ${document.getElementById('c-heart').innerText}%0A🫁 Breaths: ${document.getElementById('c-breath').innerText}%0A%0AAap bhi apni life track karein yahan: ${window.location.href}`;
+    
+    window.open(`https://wa.me{text}`, '_blank');
+}
+
         }
     }
 </script>
